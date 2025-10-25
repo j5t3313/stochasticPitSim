@@ -1,15 +1,3 @@
-
-"""
-F1 Strategy Analyzer - Universal Circuit System
-Analyzes pit stop strategies for any F1 circuit on the 2025 calendar
-
-Usage:
-    python f1_strategy_analyzer.py --simulate 2025 "Monaco"
-    python f1_strategy_analyzer.py --extract 2025 "Monaco"
-    python f1_strategy_analyzer.py --weather "Monaco" --api-key YOUR_KEY
-    python f1_strategy_analyzer.py --validate 2025 "Monaco"
-"""
-
 import argparse
 import json
 import sys
@@ -19,6 +7,9 @@ from pathlib import Path
 
 warnings.filterwarnings('ignore')
 
+# ============================================================================
+# IMPORTS
+# ============================================================================
 try:
     import fastf1
     import pandas as pd
@@ -28,6 +19,7 @@ try:
     from scipy import stats
     from tqdm import trange
     
+    # Bayesian modeling
     import jax.numpy as jnp
     import jax.random as random
     import numpyro
@@ -41,6 +33,13 @@ except ImportError as e:
     print("pip install fastf1 pandas numpy matplotlib seaborn scipy jax jaxlib numpyro tqdm")
     DEPENDENCIES_OK = False
     sys.exit(1)
+
+# Enable FastF1 cache
+# fastf1.Cache.enable_cache('f1_cache')
+
+# ============================================================================
+# CONFIGURATION MANAGEMENT
+# ============================================================================
 
 class CircuitConfig:
     """Manages circuit configuration and parameters"""
@@ -83,6 +82,9 @@ class CircuitConfig:
             return old_prob, new_prob
         return None, None
 
+# ============================================================================
+# PARAMETER EXTRACTION
+# ============================================================================
 
 class ParameterExtractor:
     """Extract circuit-specific parameters from historical data"""
@@ -143,12 +145,12 @@ class ParameterExtractor:
                     clean_laps['Year'] = year
                     clean_laps['LapTime_s'] = clean_laps['LapTime'].dt.total_seconds()
                     self.all_data.append(clean_laps)
-                    print(f" {len(clean_laps)} clean laps")
+                    print(f"✓ {len(clean_laps)} clean laps")
                 else:
                     print("No clean laps")
                     
             except Exception as e:
-                print(f" Error: {str(e)[:50]}")
+                print(f"✗ Error: {str(e)[:50]}")
         
         if self.all_data:
             self.combined_data = pd.concat(self.all_data, ignore_index=True)
@@ -343,9 +345,12 @@ def get_drs_usage_probability():
             f.write(content)
         
         print(f"\n{'='*80}")
-        print(f" Generated parameter file: {filename}")
+        print(f"✓ Generated parameter file: {filename}")
         print(f"{'='*80}\n")
 
+# ============================================================================
+# WEATHER API
+# ============================================================================
 
 class WeatherAPI:
     """Interface with OpenWeatherMap API for real-time forecasts"""
@@ -367,6 +372,7 @@ class WeatherAPI:
             print("Error: No API key provided")
             return None
         
+        # Build location query
         if state:
             location = f"{city},{state},{country_code}"
         else:
@@ -414,7 +420,9 @@ class WeatherAPI:
             print(f"Error processing forecast: {e}")
             return None
 
+# ============================================================================
 # TIRE MODELING (Practice-based Bayesian)
+# ============================================================================
 
 class TireModeling:
     """Build tire degradation models from practice session data"""
@@ -427,6 +435,7 @@ class TireModeling:
         combined_laps = []
         session_info = {'fp1_available': False, 'sprint_available': False}
         
+        # Try FP1
         try:
             fp1 = fastf1.get_session(year, gp_name, 'FP1')
             fp1.load()
@@ -446,10 +455,11 @@ class TireModeling:
                 combined_laps.append(fp1_clean)
                 session_info['fp1_available'] = True
                 session_info['fp1_laps'] = len(fp1_clean)
-                print(f"  FP1: {len(fp1_clean)} clean laps ")
+                print(f"  FP1: {len(fp1_clean)} clean laps ✓")
         except Exception as e:
             print(f"  FP1: Not available ({str(e)[:40]})")
         
+        # Try Sprint
         try:
             sprint = fastf1.get_session(year, gp_name, 'S')
             sprint.load()
@@ -469,7 +479,7 @@ class TireModeling:
                 combined_laps.append(sprint_clean)
                 session_info['sprint_available'] = True
                 session_info['sprint_laps'] = len(sprint_clean)
-                print(f"  Sprint: {len(sprint_clean)} clean laps ")
+                print(f"  Sprint: {len(sprint_clean)} clean laps ✓")
         except Exception as e:
             print(f"  Sprint: Not available ({str(e)[:40]})")
         
@@ -541,14 +551,16 @@ class TireModeling:
             alpha_mean = np.mean(samples['alpha'])
             beta_mean = np.mean(samples['beta'])
             
-            print(f" Base={alpha_mean:.2f}s, Deg={beta_mean:.4f}s/lap")
+            print(f"✓ Base={alpha_mean:.2f}s, Deg={beta_mean:.4f}s/lap")
             return mcmc
             
         except Exception as e:
-            print(f" Failed: {str(e)[:40]}")
+            print(f"✗ Failed: {str(e)[:40]}")
             return None
 
+# ============================================================================
 # RACE SIMULATION ENGINE
+# ============================================================================
 
 class RaceSimulator:
     """Monte Carlo race simulation engine"""
@@ -695,6 +707,7 @@ class RaceSimulator:
     def _calculate_lap_time(self, compound, lap_in_stint, current_lap, 
                            position, fuel_load, car_factor):
         """Calculate single lap time"""
+        # Get tire performance
         if compound in self.compound_models:
             try:
                 samples = self.compound_models[compound].get_samples()
@@ -793,7 +806,7 @@ class RaceSimulator:
                     pos_results[name]['points'].append(points)
             
             results[grid_pos] = pos_results
-            print("")
+            print("✓")
         
         return results, strategies
     
@@ -803,7 +816,9 @@ class RaceSimulator:
         points_map = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
         return points_map.get(position, 0)
 
+# ============================================================================
 # VISUALIZATION
+# ============================================================================
 
 def plot_results(results, strategies, gp_name, grid_positions):
     """Create comprehensive visualization plots"""
@@ -833,7 +848,9 @@ def plot_results(results, strategies, gp_name, grid_positions):
     plt.tight_layout()
     plt.show()
 
+# ============================================================================
 # MAIN CLI
+# ============================================================================
 
 def main():
     parser = argparse.ArgumentParser(
@@ -870,8 +887,10 @@ Examples:
         parser.print_help()
         sys.exit(1)
     
+    # Load circuit configuration
     config = CircuitConfig()
     
+    # EXTRACT MODE
     if args.extract:
         year, gp_name = args.extract
         print(f"\n{'='*80}")
@@ -883,10 +902,11 @@ Examples:
         params = extractor.extract_all_parameters()
         
         if params:
-            print(f"\n Parameter extraction completed successfully")
+            print(f"\n✓ Parameter extraction completed successfully")
         else:
-            print(f"\n Parameter extraction failed")
+            print(f"\n✗ Parameter extraction failed")
     
+    # SIMULATE MODE
     elif args.simulate:
         year, gp_name = args.simulate
         year = int(year)
@@ -903,6 +923,7 @@ Examples:
         print(f"  Rain probability: {circuit_params['rain_prob']:.0%}")
         print(f"  Sprint weekend: {'Yes' if circuit_params['sprint'] else 'No'}")
         
+        # Try to load extracted parameters
         gp_clean = gp_name.lower().replace(' ', '_').replace('grand_prix', 'gp').replace('__', '_')
         if not gp_clean.endswith('_gp') and not gp_clean.endswith('_prix'):
             gp_clean += '_gp'
@@ -910,7 +931,7 @@ Examples:
         
         extracted_params = None
         if os.path.exists(param_file):
-            print(f"\n Found extracted parameters: {param_file}")
+            print(f"\n✓ Found extracted parameters: {param_file}")
             try:
                 import importlib.util
                 spec = importlib.util.spec_from_file_location("circuit_params", param_file)
@@ -926,6 +947,7 @@ Examples:
             except:
                 print(f"  Warning: Could not load {param_file}, using fallback")
         
+        # Build tire models from practice
         print(f"\n{'='*80}")
         print("BUILDING TIRE MODELS FROM PRACTICE DATA")
         print(f"{'='*80}")
@@ -945,6 +967,7 @@ Examples:
                 if model:
                     compound_models[compound] = model
         
+        # Run simulation
         print(f"\n{'='*80}")
         print("STARTING MONTE CARLO SIMULATION")
         print(f"{'='*80}")
@@ -952,6 +975,7 @@ Examples:
         simulator = RaceSimulator(circuit_params, extracted_params, compound_models)
         results, strategies = simulator.run_monte_carlo()
         
+        # Display results
         print(f"\n{'='*80}")
         print(f"SIMULATION RESULTS - {gp_name.upper()}")
         print(f"{'='*80}")
@@ -980,8 +1004,10 @@ Examples:
                 summary_df = summary_df.sort_values('Avg Points', ascending=False)
                 print(summary_df.to_string(index=False))
         
+        # Plot
         plot_results(results, strategies, gp_name, [1, 3, 5, 8, 10, 15])
     
+    # WEATHER MODE
     elif args.weather:
         gp_name = args.weather
         
@@ -990,6 +1016,7 @@ Examples:
         print(f"{'='*80}")
         print(f"Grand Prix: {gp_name}\n")
         
+        # Get API key
         api_key = args.api_key
         if not api_key:
             api_key = input("Enter OpenWeatherMap API key: ").strip()
@@ -998,6 +1025,7 @@ Examples:
             print("Error: API key required")
             sys.exit(1)
         
+        # Get location details
         print("\nEnter race location details:")
         city = input("City: ").strip()
         state = input("Region/State (press Enter if not applicable): ").strip()
@@ -1008,6 +1036,7 @@ Examples:
         
         target_datetime = f"{race_date}T{race_time}:00"
         
+        # Fetch weather
         weather_api = WeatherAPI(api_key)
         forecast = weather_api.get_forecast(city, state, country_code, target_datetime)
         
@@ -1021,27 +1050,31 @@ Examples:
             print(f"Temperature: {forecast['temp']:.1f}°C")
             print(f"Wind: {forecast['wind_speed']:.1f} m/s")
             
+            # Offer to update config
             update = input("\nUpdate circuit_config.json with this rain probability? (y/n): ").strip().lower()
             if update == 'y':
                 old_prob, new_prob = config.update_rain_probability(
                     gp_name, forecast['rain_prob'] / 100
                 )
                 if old_prob is not None:
-                    print(f" Updated {gp_name}: rain_prob {old_prob:.2f} -> {new_prob:.2f}")
+                    print(f"✓ Updated {gp_name}: rain_prob {old_prob:.2f} → {new_prob:.2f}")
                 else:
-                    print(f" Could not update config")
+                    print(f"✗ Could not update config")
         else:
-            print("\n Could not fetch weather forecast")
+            print("\n✗ Could not fetch weather forecast")
     
+    # VALIDATE MODE
     elif args.validate:
         print("\nValidation mode - implementation depends on having actual race results")
         print("Run this after the race when data is available in FastF1")
     
+    # STRATEGIES MODE
     elif args.strategies:
         year, gp_name = args.strategies
         print(f"\nExtracting strategies from {year} {gp_name}")
         print("This would show actual tire strategies used in the race")
     
+    # HISTORICAL MODE
     elif args.historical:
         gp_name = args.historical
         print(f"\nAnalyzing historical strategies for {gp_name}")
