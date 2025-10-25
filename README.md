@@ -603,11 +603,11 @@ MODELING APPROACH
 - Stochastic race event generation
 - Historical parameter extraction
 
-================================================================================
+=================================
 
 Created by: Jessica Steele
 Last Updated: October 2025
 
 For questions, issues, or improvements, please document your findings.
 
-================================================================================
+=======================
