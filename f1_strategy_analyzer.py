@@ -426,23 +426,27 @@ class WeatherAPI:
 
 class TireModeling:
     """Build tire degradation models from practice session data"""
-    
+
     @staticmethod
     def load_practice_sessions(year, gp_name):
-        """Load FP1 and Sprint sessions for tire modeling"""
+        """Load FP1, FP2, or Sprint sessions for tire modeling"""
         print(f"\nLoading practice sessions for {year} {gp_name}...")
-        
+
         combined_laps = []
-        session_info = {'fp1_available': False, 'sprint_available': False}
-        
-        # Try FP1
+        session_info = {
+            'fp1_available': False,
+            'fp2_available': False,
+            'sprint_available': False
+        }
+
+        # --- FP1 ---
         try:
             fp1 = fastf1.get_session(year, gp_name, 'FP1')
             fp1.load()
-            
+
             fp1_laps = fp1.laps.copy()
             fp1_laps['Session'] = 'FP1'
-            
+
             fp1_clean = fp1_laps[
                 (fp1_laps['LapTime'].notna()) &
                 (fp1_laps['Compound'].notna()) &
@@ -450,7 +454,7 @@ class TireModeling:
                 (~fp1_laps['PitInTime'].notna()) &
                 (fp1_laps['TrackStatus'] == '1')
             ].copy()
-            
+
             if len(fp1_clean) > 0:
                 combined_laps.append(fp1_clean)
                 session_info['fp1_available'] = True
@@ -458,46 +462,75 @@ class TireModeling:
                 print(f"  FP1: {len(fp1_clean)} clean laps ✓")
         except Exception as e:
             print(f"  FP1: Not available ({str(e)[:40]})")
-        
-        # Try Sprint
+
+        # --- FP2  ---
+        fp2_loaded = False
         try:
-            sprint = fastf1.get_session(year, gp_name, 'S')
-            sprint.load()
-            
-            sprint_laps = sprint.laps.copy()
-            sprint_laps['Session'] = 'Sprint'
-            
-            sprint_clean = sprint_laps[
-                (sprint_laps['LapTime'].notna()) &
-                (sprint_laps['Compound'].notna()) &
-                (~sprint_laps['PitOutTime'].notna()) &
-                (~sprint_laps['PitInTime'].notna()) &
-                (sprint_laps['TrackStatus'] == '1')
+            fp2 = fastf1.get_session(year, gp_name, 'FP2')
+            fp2.load()
+
+            fp2_laps = fp2.laps.copy()
+            fp2_laps['Session'] = 'FP2'
+
+            fp2_clean = fp2_laps[
+                (fp2_laps['LapTime'].notna()) &
+                (fp2_laps['Compound'].notna()) &
+                (~fp2_laps['PitOutTime'].notna()) &
+                (~fp2_laps['PitInTime'].notna()) &
+                (fp2_laps['TrackStatus'] == '1')
             ].copy()
-            
-            if len(sprint_clean) > 0:
-                combined_laps.append(sprint_clean)
-                session_info['sprint_available'] = True
-                session_info['sprint_laps'] = len(sprint_clean)
-                print(f"  Sprint: {len(sprint_clean)} clean laps ✓")
+
+            if len(fp2_clean) > 0:
+                combined_laps.append(fp2_clean)
+                session_info['fp2_available'] = True
+                session_info['fp2_laps'] = len(fp2_clean)
+                fp2_loaded = True
+                print(f"  FP2: {len(fp2_clean)} clean laps ✓")
         except Exception as e:
-            print(f"  Sprint: Not available ({str(e)[:40]})")
+            print(f"  FP2: Not available ({str(e)[:40]})")
+
+        # --- Sprint (only if FP2 not loaded) ---
+        if not fp2_loaded:
+            try:
+                sprint = fastf1.get_session(year, gp_name, 'S')
+                sprint.load()
+
+                sprint_laps = sprint.laps.copy()
+                sprint_laps['Session'] = 'Sprint'
+
+                sprint_clean = sprint_laps[
+                    (sprint_laps['LapTime'].notna()) &
+                    (sprint_laps['Compound'].notna()) &
+                    (~sprint_laps['PitOutTime'].notna()) &
+                    (~sprint_laps['PitInTime'].notna()) &
+                    (sprint_laps['TrackStatus'] == '1')
+                ].copy()
+
+                if len(sprint_clean) > 0:
+                    combined_laps.append(sprint_clean)
+                    session_info['sprint_available'] = True
+                    session_info['sprint_laps'] = len(sprint_clean)
+                    print(f"  Sprint: {len(sprint_clean)} clean laps ✓")
+            except Exception as e:
+                print(f"  Sprint: Not available ({str(e)[:40]})")
+
         
         if combined_laps:
             combined_data = pd.concat(combined_laps, ignore_index=True)
             combined_data['StintLap'] = combined_data.groupby(['Driver', 'Session', 'Stint']).cumcount() + 1
             combined_data['LapTime_s'] = combined_data['LapTime'].dt.total_seconds()
-            
+
             session_info['total_laps'] = len(combined_data)
             session_info['compounds_available'] = list(combined_data['Compound'].unique())
-            
+
             print(f"  Combined: {len(combined_data)} total laps")
             print(f"  Compounds: {', '.join(session_info['compounds_available'])}")
-            
+
             return combined_data, session_info
-        
+
         print("  No practice data available")
         return pd.DataFrame(), session_info
+
     
     @staticmethod
     def build_tire_model(compound_data, compound_name, base_pace):
@@ -921,8 +954,8 @@ Examples:
         print(f"  Laps: {circuit_params['laps']}")
         print(f"  Base pace: {circuit_params['base_pace']}s")
         print(f"  Rain probability: {circuit_params['rain_prob']:.0%}")
-        print(f"  Sprint weekend: {'Yes' if circuit_params['sprint'] else 'No'}")
-        
+        print(f"  Sprint weekend: {'Yes' if circuit_params.get('sprint', False) else 'No'}")
+
         # Try to load extracted parameters
         gp_clean = gp_name.lower().replace(' ', '_').replace('grand_prix', 'gp').replace('__', '_')
         if not gp_clean.endswith('_gp') and not gp_clean.endswith('_prix'):
