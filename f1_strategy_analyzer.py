@@ -64,7 +64,7 @@ class CircuitConfig:
             print(f"Error: '{gp_name}' not found in configuration")
             print(f"\nAvailable circuits:")
             for name in sorted(self.circuits.keys()):
-                sprint_flag = " (SPRINT)" if self.circuits[name]['sprint'] else ""
+                sprint_flag = " (SPRINT)" if self.circuits[name].get('sprint', False) else ""
                 print(f"  - {name}{sprint_flag}")
             sys.exit(1)
         
