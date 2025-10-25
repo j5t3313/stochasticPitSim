@@ -16,7 +16,6 @@ KEY FEATURES
 ✓ Monte Carlo simulation with 1500+ iterations
 ✓ Comprehensive strategy analysis and visualization
 
-================================================================================
 QUICK START
 ================================================================================
 
@@ -38,7 +37,6 @@ WITH WEATHER UPDATES
 ---------------------
 python f1_strategy_analyzer.py --weather "Monaco" --api-key YOUR_API_KEY
 
-================================================================================
 COMMAND REFERENCE
 ================================================================================
 
@@ -90,7 +88,6 @@ COMMAND REFERENCE
     Example:
     python f1_strategy_analyzer.py --historical "Monaco"
 
-================================================================================
 CIRCUIT CONFIGURATION
 ================================================================================
 
@@ -135,7 +132,6 @@ Sprint Weekends (6):
   • São Paulo Grand Prix (Interlagos) 🏁
   • Qatar Grand Prix (Lusail) 🏁
 
-================================================================================
 WEATHER API INTEGRATION
 ================================================================================
 
@@ -203,7 +199,6 @@ RECOMMENDED WORKFLOW
 3. Run simulation with updated rain probability
 4. Optionally repeat closer to race for better accuracy
 
-================================================================================
 PARAMETER EXTRACTION
 ================================================================================
 
@@ -248,7 +243,6 @@ Example: monaco_params.py, united_states_gp_params.py
 
 This file is automatically loaded by --simulate if it exists.
 
-================================================================================
 TIRE MODELING SYSTEM
 ================================================================================
 
@@ -285,7 +279,6 @@ Where:
 - β (beta) = Degradation rate per lap
 - Both parameters have uncertainty distributions
 
-================================================================================
 SIMULATION MECHANICS
 ================================================================================
 
@@ -342,7 +335,6 @@ For each strategy:
 - Podium percentage (for relevant grid positions)
 - Win percentage (for front-runners)
 
-================================================================================
 VALIDATION SYSTEM
 ================================================================================
 
@@ -376,7 +368,6 @@ MAE 2.0-3.0: Good accuracy
 MAE 3.0-4.0: Moderate accuracy
 MAE > 4.0: Poor accuracy (parameter refinement needed)
 
-================================================================================
 OUTPUT FILES
 ================================================================================
 
@@ -405,7 +396,6 @@ VISUALIZATION PLOTS
    - Strategy effectiveness
    - Position changes analysis
 
-================================================================================
 TYPICAL WORKFLOWS
 ================================================================================
 
@@ -440,7 +430,6 @@ python f1_strategy_analyzer.py --historical "Monaco"
 # Extract actual strategies from most recent race
 python f1_strategy_analyzer.py --strategies 2025 "Monaco"
 
-================================================================================
 TECHNICAL REQUIREMENTS
 ================================================================================
 
@@ -479,7 +468,6 @@ Required for:
 
 Can run offline after data is cached.
 
-================================================================================
 TROUBLESHOOTING
 ================================================================================
 
@@ -521,7 +509,6 @@ SOLUTION:
     - Use quotes: "Monaco" not Monaco
     - Check circuit_config.json for exact name format
 
-================================================================================
 CUSTOMIZATION
 ================================================================================
 
@@ -558,7 +545,6 @@ Code uses OpenWeatherMap but can be adapted for:
 - Visual Crossing
 - Met Office
 
-================================================================================
 ADVANCED FEATURES
 ================================================================================
 
@@ -598,7 +584,6 @@ car_performance_map = {
     ...
 }
 
-================================================================================
 CREDITS & REFERENCES
 ================================================================================
 
