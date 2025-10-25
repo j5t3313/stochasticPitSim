@@ -97,7 +97,7 @@ class ParamExtractor:
                 pos_pen[pos] = {
                     'penalty': float(np.mean(pen_list)),
                     'std': float(np.std(pen_list)),
-                    'n': len(pen_list)
+                    'sample_size': len(pen_list)
                 }
         
         print(f"  Extracted penalties for {len(pos_pen)} positions")
@@ -139,17 +139,17 @@ class ParamExtractor:
                         deg_rate = np.median(deg_rates)
                 
                 tire_data[comp] = {
-                    'base': float(base_time),
-                    'deg': float(deg_rate),
-                    'r2': 0.01,
-                    'n': len(comp_laps),
+                    'base_time': float(base_time),
+                    'degradation_rate': float(deg_rate),
+                    'r_squared': 0.01,
+                    'sample_size': len(comp_laps),
                     'offset': 0.0
                 }
         
         if tire_data:
-            min_time = min(d['base'] for d in tire_data.values())
+            min_time = min(d['base_time'] for d in tire_data.values())
             for comp in tire_data:
-                tire_data[comp]['offset'] = tire_data[comp]['base'] - min_time
+                tire_data[comp]['offset'] = tire_data[comp]['base_time'] - min_time
         
         print(f"  Extracted data for {len(tire_data)} compounds")
         return tire_data
@@ -158,8 +158,8 @@ class ParamExtractor:
         print("\nExtracting driver error rates...")
         
         err_data = {
-            'dry': {'rate': 0.04, 'n': 100}, 
-            'wet': {'rate': 0.08, 'n': 20}
+            'dry': {'base_error_rate': 0.04, 'sample_size': 100}, 
+            'wet': {'base_error_rate': 0.08, 'sample_size': 20}
         }
         
         print("  Using estimated error rates")
@@ -169,11 +169,11 @@ class ParamExtractor:
         print("\nExtracting DRS effectiveness...")
         
         drs_data = {
-            'mean': 0.35,
-            'median': 0.32,
-            'std': 0.18,
-            'n': 500,
-            'prob': 0.35
+            'mean_advantage': 0.35,
+            'median_advantage': 0.32,
+            'std_advantage': 0.18,
+            'sample_size': 500,
+            'usage_probability': 0.35
         }
         
         print("  Using estimated DRS effectiveness")
@@ -183,64 +183,49 @@ class ParamExtractor:
         gp_clean = self.gp_name.lower().replace(' ', '_').replace('grand_prix', 'gp')
         fname = f"{gp_clean}_params.py"
         
-        content = f'''import numpy as np
+        content = f'''"""
+Extracted F1 simulation parameters for {self.gp_name}
+Generated automatically from historical FastF1 data ({', '.join(map(str, self.years))})
+"""
 
-POS_PEN = {repr(pos_pen)}
+import numpy as np
 
-TIRE_PERF = {repr(tire_perf)}
+POSITION_PENALTIES = {repr(pos_pen)}
 
-DRV_ERR = {repr(drv_err)}
+TIRE_PERFORMANCE = {repr(tire_perf)}
 
-DRS = {repr(drs)}
+DRIVER_ERROR_RATES = {repr(drv_err)}
 
-def get_pos_pen(pos):
-    if pos in POS_PEN:
-        return POS_PEN[pos]["penalty"]
+DRS_EFFECTIVENESS = {repr(drs)}
+
+def get_position_penalty(position):
+    if position in POSITION_PENALTIES:
+        return POSITION_PENALTIES[position]["penalty"]
     else:
-        if pos <= 20:
-            return 0.05 * (pos - 1)
+        if position <= 20:
+            return 0.05 * (position - 1)
         else:
             return 1.0
 
-def get_tire_offset(comp):
-    return TIRE_PERF.get(comp, {{}}).get("offset", 0.0)
+def get_tire_offset(compound):
+    return TIRE_PERFORMANCE.get(compound, {{}}).get("offset", 0.0)
 
-def get_tire_deg(comp):
-    return TIRE_PERF.get(comp, {{}}).get("deg", 0.08)
+def get_tire_degradation_rate(compound):
+    return TIRE_PERFORMANCE.get(compound, {{}}).get("degradation_rate", 0.08)
 
-def get_err_rate(weather="dry"):
-    return DRV_ERR.get(weather, {{}}).get("rate", 0.01)
+def get_driver_error_rate(weather_condition="dry"):
+    return DRIVER_ERROR_RATES.get(weather_condition, {{}}).get("base_error_rate", 0.01)
 
-def get_drs_adv():
-    mean_adv = DRS.get("median", 0.25)
-    std_adv = DRS.get("std", 0.1)
+def get_drs_advantage():
+    mean_adv = DRS_EFFECTIVENESS.get("median_advantage", 0.25)
+    std_adv = DRS_EFFECTIVENESS.get("std_advantage", 0.1)
     return max(0.1, np.random.normal(mean_adv, std_adv))
 
-def get_drs_prob():
-    return DRS.get("prob", 0.3)
+def get_drs_usage_probability():
+    return DRS_EFFECTIVENESS.get("usage_probability", 0.3)
 '''
         
         with open(fname, 'w', encoding='utf-8') as f:
             f.write(content)
         
         print(f"\nGenerated parameter file: {fname}")
-
-def main():
-    import sys
-    
-    if len(sys.argv) < 2:
-        print("Usage: python param_extractor.py 'Grand Prix Name'")
-        return
-    
-    gp_name = sys.argv[1]
-    
-    ext = ParamExtractor(gp_name)
-    params = ext.extract()
-    
-    if params:
-        print(f"\nParameter extraction completed for {gp_name}")
-    else:
-        print(f"\nParameter extraction failed for {gp_name}")
-
-if __name__ == "__main__":
-    main()
