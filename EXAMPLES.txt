@@ -1,0 +1,307 @@
+F1 STRATEGY ANALYZER - USAGE EXAMPLES
+=====================================
+
+BASIC USAGE
+-----------
+
+List all available circuits:
+$ python f1_strategy_analyzer.py --list
+
+Extract parameters for United States GP:
+$ python f1_strategy_analyzer.py --extract 2025 "United States"
+
+Run simulation for United States GP:
+$ python f1_strategy_analyzer.py --simulate 2025 "United States"
+
+Validate United States GP results:
+$ python f1_strategy_analyzer.py --validate 2025 "United States"
+
+
+ADVANCED EXAMPLES
+-----------------
+
+1. HIGH PRECISION SIMULATION
+   Run 5000 simulations for better accuracy:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monaco" --sims 5000
+
+2. FRONT-RUNNERS ONLY
+   Analyze only top 5 grid positions:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Silverstone" --grid 1,2,3,4,5
+
+3. MIDFIELD ANALYSIS
+   Focus on positions 8-15:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Spa" --grid 8,9,10,11,12,13,14,15
+
+4. SPECIFIC POSITION
+   Analyze single grid position:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monza" --grid 3
+
+
+WORKFLOW EXAMPLES
+-----------------
+
+STANDARD RACE WEEKEND:
+1. Extract historical parameters:
+   $ python f1_strategy_analyzer.py --extract 2025 "Monaco"
+
+2. Run pre-race simulation:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+
+3. Post-race validation:
+   $ python f1_strategy_analyzer.py --validate 2025 "Monaco"
+
+
+SPRINT WEEKEND:
+The system automatically detects sprint weekends and uses Sprint data.
+
+1. Extract parameters:
+   $ python f1_strategy_analyzer.py --extract 2025 "China"
+
+2. Run simulation (uses FP1 + Sprint data for tire models):
+   $ python f1_strategy_analyzer.py --simulate 2025 "China"
+
+3. Validate after race:
+   $ python f1_strategy_analyzer.py --validate 2025 "China"
+
+
+COMPARING CIRCUITS
+------------------
+
+Analyze multiple circuits in sequence:
+
+$ python f1_strategy_analyzer.py --simulate 2025 "Monaco" --grid 1,3,5
+$ python f1_strategy_analyzer.py --simulate 2025 "Silverstone" --grid 1,3,5  
+$ python f1_strategy_analyzer.py --simulate 2025 "Monza" --grid 1,3,5
+
+
+SEASON-LONG ANALYSIS
+--------------------
+
+Extract parameters for all circuits at season start:
+
+$ python f1_strategy_analyzer.py --extract 2025 "Australia"
+$ python f1_strategy_analyzer.py --extract 2025 "China"
+$ python f1_strategy_analyzer.py --extract 2025 "Japan"
+[continue for all 24 circuits]
+
+
+TYPICAL USE CASES
+-----------------
+
+1. TEAM STRATEGY MEETING
+   Before race weekend, simulate expected strategies:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Austria" --sims 3000
+
+2. POST-RACE ANALYSIS
+   After race, validate model accuracy:
+   $ python f1_strategy_analyzer.py --validate 2025 "Austria"
+
+3. QUALIFYING SCENARIOS
+   Analyze different starting positions:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Hungary" --grid 1,4,7,10,13
+
+4. RAIN PROBABILITY ANALYSIS
+   Circuits with high rain probability already configured:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Belgium"
+   $ python f1_strategy_analyzer.py --simulate 2025 "Brazil"
+
+5. STREET CIRCUIT ANALYSIS
+   Street circuits have higher SC probability:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+   $ python f1_strategy_analyzer.py --simulate 2025 "Singapore"
+   $ python f1_strategy_analyzer.py --simulate 2025 "Baku"
+
+
+PARAMETER EXTRACTION NOTES
+--------------------------
+
+Parameter extraction uses last 3 years of data by default.
+Files created: [circuit]_gp_params.py
+
+Example output files:
+- united_states_gp_params.py
+- monaco_gp_params.py
+- spa-francorchamps_gp_params.py
+
+These files contain:
+- POS_PEN: Position-based time penalties
+- TIRE_PERF: Tire compound performance data  
+- DRV_ERR: Driver error rates
+- DRS: DRS effectiveness metrics
+
+
+SIMULATION OUTPUTS
+------------------
+
+Console output includes:
+- Tire model building status
+- Simulation progress bars
+- Strategy comparison tables
+- Compound quality metrics
+
+Graphical outputs:
+- Race time distribution histograms
+- Tire degradation curves (if models available)
+
+Strategy metrics per grid position:
+- Avg Time: Average race completion time
+- Avg Pos: Average finishing position
+- Avg Pts: Average championship points
+- Pts %: Percentage of simulations scoring points
+- Top 5 %: Percentage finishing in top 5
+- Podium %: Percentage finishing on podium
+- Win %: Percentage winning the race
+
+
+VALIDATION OUTPUTS
+------------------
+
+Console output includes:
+- Position prediction validation
+- Race conditions analysis
+- Strategy distribution analysis
+- Weather and safety car analysis
+
+Graphical outputs:
+- Predicted vs Actual position scatter
+- MAE by grid position
+- Strategy accuracy comparison
+- Position change analysis
+
+Accuracy metrics:
+- Position MAE: Mean absolute error in positions
+- Position RMSE: Root mean square error
+- Points MAE: Mean absolute error in points
+- Accuracy within 2: % predictions within 2 positions
+
+
+INTERPRETING RESULTS
+--------------------
+
+GOOD STRATEGY INDICATORS:
+- Low average race time
+- High average points
+- High Top 5 percentage
+- Consistent results across simulations
+
+RISK ASSESSMENT:
+- Wide race time distribution = high variance
+- Low points percentage = risky strategy
+- High podium % but low Top 5 % = inconsistent
+
+POSITION ANALYSIS:
+- Positions gained > 0: Good undercut potential
+- Positions lost > 0: Vulnerable to overcut
+- Large variance: High uncertainty
+
+
+TROUBLESHOOTING EXAMPLES
+-------------------------
+
+1. NO PRACTICE DATA
+   If FP1/Sprint data unavailable:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+   System will use fallback tire models automatically.
+
+2. RACE NOT YET RUN
+   Validation fails if race hasn't occurred:
+   $ python f1_strategy_analyzer.py --validate 2025 "Abu Dhabi"
+   Expected: "Race data not available yet"
+   Solution: Run simulation instead.
+
+3. INVALID CIRCUIT NAME
+   Wrong circuit key:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Silverstone Circuit"
+   Solution: Use "Great Britain" instead
+   $ python f1_strategy_analyzer.py --list
+
+4. OUT OF MEMORY
+   Reduce number of simulations:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monaco" --sims 500
+
+
+BATCH PROCESSING
+----------------
+
+Shell script for full season analysis:
+
+#!/bin/bash
+CIRCUITS=("Australia" "China" "Japan" "Bahrain" "Saudi Arabia" "Miami" 
+          "Emilia Romagna" "Monaco" "Canada" "Spain" "Austria" 
+          "Great Britain" "Hungary" "Belgium" "Netherlands" "Italy"
+          "Azerbaijan" "Singapore" "United States" "Mexico" "Brazil"
+          "Las Vegas" "Qatar" "Abu Dhabi")
+
+for circuit in "${CIRCUITS[@]}"; do
+    echo "Processing $circuit..."
+    python f1_strategy_analyzer.py --extract 2025 "$circuit"
+    python f1_strategy_analyzer.py --simulate 2025 "$circuit" --sims 2000
+done
+
+
+PERFORMANCE TIPS
+----------------
+
+1. Start with fewer simulations for testing:
+   $ python f1_strategy_analyzer.py --simulate 2025 "Monaco" --sims 100
+
+2. Use default grid positions initially:
+   Default: [1, 3, 5, 8, 10, 15]
+
+3. Extract parameters once, reuse for multiple simulations
+
+4. Close plot windows to continue execution
+
+5. Use virtual environment to avoid dependency conflicts
+
+
+RECOMMENDED WORKFLOW
+--------------------
+
+BEGINNING OF SEASON:
+1. Extract parameters for all circuits
+2. Run baseline simulations
+
+RACE WEEKEND:
+1. Run detailed simulation after practice sessions
+2. Update strategies if practice models improve predictions
+
+AFTER RACE:
+1. Validate model against actual results
+2. Refine parameters if validation shows issues
+3. Update circuit config if needed
+
+
+INTEGRATION EXAMPLES
+--------------------
+
+Use within Python scripts:
+
+from f1_strategy_analyzer import run_simulation, run_validation
+
+run_simulation(2025, "Monaco", grid_pos=[1,2,3], n_sims=1000)
+run_validation(2025, "Monaco")
+
+
+EXPORT RESULTS
+--------------
+
+Results can be exported by modifying pit_sim.py:
+
+import json
+
+with open('results.json', 'w') as f:
+    json.dump(results, f)
+
+
+CUSTOM STRATEGIES
+-----------------
+
+Add custom strategies in pit_sim.py get_strats():
+
+"3-stop (S-M-H-S)": [
+    {"comp": "SOFT", "laps": 14},
+    {"comp": "MEDIUM", "laps": 14},
+    {"comp": "HARD", "laps": 14},
+    {"comp": "SOFT", "laps": 14}
+]

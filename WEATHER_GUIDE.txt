@@ -1,0 +1,270 @@
+WEATHER RAIN PROBABILITY SCRIPT - USAGE GUIDE
+=============================================
+
+PURPOSE
+-------
+Get accurate rain probability for F1 race weekend using OpenWeather API.
+Uses race location and date/time to fetch weather forecast.
+
+SETUP
+-----
+
+1. Get OpenWeather API Key (FREE):
+   - Go to: https://openweathermap.org/api
+   - Sign up for free account
+   - Get API key (free tier: 1000 calls/day)
+   - One Call API 3.0 is included in free tier
+
+2. Install requests library:
+   pip install requests
+
+USAGE
+-----
+
+Run the script:
+python weather_rain_probability.py
+
+Follow the prompts:
+1. Enter API key
+2. Enter city (e.g., Austin, Monaco, Singapore)
+3. Enter region/state (optional)
+4. Enter country code (e.g., US, MC, SG)
+5. Enter race date (YYYY-MM-DD format)
+6. Enter local race start time (HH:MM format)
+
+EXAMPLE SESSION
+---------------
+
+Enter your OpenWeather API key: your_api_key_here
+
+City (e.g., Austin, Monaco, Singapore): Austin
+Region/State (optional, press Enter to skip): Texas
+Country code (e.g., US, MC, SG): US
+
+Date (YYYY-MM-DD, e.g., 2025-10-19): 2025-10-19
+Local start time (HH:MM, e.g., 14:00): 14:00
+
+Output:
+RAIN PROBABILITY: 12.00%
+
+Weather: scattered clouds
+Temperature: 24.5°C
+Humidity: 65%
+
+COUNTRY CODES
+-------------
+Common F1 locations:
+US - United States (Austin, Miami, Las Vegas)
+MC - Monaco
+IT - Italy (Monza, Imola)
+GB - United Kingdom (Silverstone)
+BE - Belgium (Spa)
+NL - Netherlands (Zandvoort)
+ES - Spain (Barcelona)
+AT - Austria (Spielberg)
+HU - Hungary (Budapest)
+FR - France
+DE - Germany
+JP - Japan (Suzuka)
+CN - China (Shanghai)
+SG - Singapore
+AE - United Arab Emirates (Abu Dhabi)
+BH - Bahrain (Sakhir)
+SA - Saudi Arabia (Jeddah)
+AU - Australia (Melbourne)
+BR - Brazil (São Paulo)
+MX - Mexico (Mexico City)
+CA - Canada (Montreal)
+AZ - Azerbaijan (Baku)
+QA - Qatar (Lusail)
+
+LOCATION EXAMPLES
+-----------------
+
+United States GP (Austin):
+City: Austin
+Region: Texas
+Country: US
+
+Monaco GP:
+City: Monaco
+Region: (leave blank)
+Country: MC
+
+Japanese GP (Suzuka):
+City: Suzuka
+Region: Mie
+Country: JP
+
+Singapore GP:
+City: Singapore
+Region: (leave blank)
+Country: SG
+
+Belgian GP (Spa):
+City: Spa
+Region: Wallonia
+Country: BE
+
+Brazilian GP (São Paulo):
+City: São Paulo
+Region: (leave blank)
+Country: BR
+
+USING THE OUTPUT
+----------------
+
+The script provides rain probability as a decimal (e.g., 0.12 for 12%).
+
+To use in circuit_config.json:
+1. Open circuit_config.json
+2. Find the circuit entry
+3. Update the "rain_prob" value
+
+Example:
+"United States": {
+  ...
+  "rain_prob": 0.12,
+  ...
+}
+
+SAVING OUTPUT
+-------------
+
+The script offers to save results to JSON file:
+- Format: weather_[city]_[date].json
+- Example: weather_austin_2025-10-19.json
+- Contains: location, coordinates, forecast, recommended config value
+
+OUTPUT DETAILS
+--------------
+
+The forecast includes:
+- Rain probability (0.0 to 1.0)
+- Weather description (clear, clouds, rain, etc.)
+- Temperature in Celsius
+- Humidity percentage
+- Forecast timestamp
+- Time difference from race start
+
+FORECAST ACCURACY
+-----------------
+
+OpenWeather provides:
+- Hourly forecasts up to 48 hours ahead
+- 5-day forecast for longer range
+- Probability of precipitation (POP)
+
+Best practices:
+- Run script closer to race weekend for accuracy
+- Check forecast multiple times as date approaches
+- Compare with other weather sources
+
+LIMITATIONS
+-----------
+
+1. API free tier limits:
+   - 1000 calls per day
+   - Hourly forecasts up to 48 hours
+   - May need paid tier for longer forecasts
+
+2. Forecast accuracy:
+   - Decreases with time distance
+   - Weather can change quickly
+   - Use as estimate, not guarantee
+
+3. Timezone considerations:
+   - Enter race time in LOCAL time zone
+   - Script matches to nearest forecast hour
+   - Shows time difference in output
+
+TROUBLESHOOTING
+---------------
+
+Error: "Location not found"
+- Check city spelling
+- Try without region/state
+- Use English names
+- Check country code
+
+Error: "No forecast found"
+- Race date too far in future (>5 days)
+- Try again closer to race
+- Check date format (YYYY-MM-DD)
+
+Error: "API request failed"
+- Check API key is valid
+- Check internet connection
+- Verify API key has One Call 3.0 access
+- Check free tier limits (1000/day)
+
+Error: "Invalid date/time format"
+- Use YYYY-MM-DD for date
+- Use HH:MM for time (24-hour format)
+- Examples: 2025-10-19, 14:00
+
+INTEGRATION WITH F1 ANALYZER
+-----------------------------
+
+Workflow:
+1. Run weather script before race weekend
+2. Get rain probability
+3. Update circuit_config.json
+4. Run simulation with updated value
+
+python weather_rain_probability.py
+(get rain probability)
+
+Edit circuit_config.json:
+"rain_prob": 0.12
+
+python f1_strategy_analyzer.py --simulate 2025 "United States"
+
+ADVANCED USAGE
+--------------
+
+Batch processing for multiple races:
+Create a file with race details, parse programmatically.
+
+Integration into main analyzer:
+Import functions from weather_rain_probability.py:
+
+from weather_rain_probability import get_coordinates, get_rain_probability
+
+Automated updates:
+Run script weekly before each race to update config automatically.
+
+TIPS
+----
+
+1. Run 2-3 days before race for best accuracy
+2. Save outputs for record keeping
+3. Compare with historical averages
+4. Consider local weather patterns
+5. Check forecast updates daily as race approaches
+6. Use region/state for cities with common names
+7. Free API key is sufficient for weekly use
+
+API KEY SECURITY
+----------------
+
+Do not commit API key to version control.
+Store in environment variable:
+
+export OPENWEATHER_API_KEY="your_key_here"
+
+Modify script to read from environment:
+import os
+api_key = os.getenv('OPENWEATHER_API_KEY')
+
+SUPPORT
+-------
+
+OpenWeather API Documentation:
+https://openweathermap.org/api/one-call-3
+
+OpenWeather Support:
+https://openweathermap.org/faq
+
+Geocoding API:
+https://openweathermap.org/api/geocoding-api
