@@ -8,7 +8,7 @@
     "base_pace": 82,
     "pit_loss": 19.3,
     "rain_prob": 0.15,
-    "sc_prob": 0.50,
+    "sc_prob": 0.5,
     "vsc_prob": 0.67,
     "fuel_rate": 1.897,
     "fuel_effect": 0.035
@@ -38,7 +38,7 @@
     "pit_loss": 22.7,
     "rain_prob": 0.25,
     "sc_prob": 0.67,
-    "vsc_prob": 0.50,
+    "vsc_prob": 0.5,
     "fuel_rate": 2.075,
     "fuel_effect": 0.035
   },
@@ -52,7 +52,7 @@
     "pit_loss": 22.9,
     "rain_prob": 0.02,
     "sc_prob": 0.63,
-    "vsc_prob": 0.50,
+    "vsc_prob": 0.5,
     "fuel_rate": 1.93,
     "fuel_effect": 0.035
   },
@@ -66,7 +66,7 @@
     "pit_loss": 19.2,
     "rain_prob": 0.01,
     "sc_prob": 0.99,
-    "vsc_prob": 0.50,
+    "vsc_prob": 0.5,
     "fuel_rate": 2.2,
     "fuel_effect": 0.035
   },
@@ -151,7 +151,7 @@
     "pit_loss": 20.3,
     "rain_prob": 0.3,
     "sc_prob": 0.38,
-    "vsc_prob": 0.50,
+    "vsc_prob": 0.5,
     "fuel_rate": 1.549,
     "fuel_effect": 0.035
   },
@@ -207,8 +207,8 @@
     "base_pace": 72,
     "pit_loss": 23,
     "rain_prob": 0.3,
-    "sc_prob": 0.50,
-    "vsc_prob": 0.50,
+    "sc_prob": 0.5,
+    "vsc_prob": 0.5,
     "fuel_rate": 1.528,
     "fuel_effect": 0.035
   },
@@ -221,7 +221,7 @@
     "base_pace": 82,
     "pit_loss": 24.3,
     "rain_prob": 0.15,
-    "sc_prob": 0.50,
+    "sc_prob": 0.5,
     "vsc_prob": 0.38,
     "fuel_rate": 2.075,
     "fuel_effect": 0.035
@@ -321,8 +321,8 @@
     "base_pace": 85,
     "pit_loss": 26.3,
     "rain_prob": 0.01,
-    "sc_prob": 0.50,
-    "vsc_prob": 0.50,
+    "sc_prob": 0.5,
+    "vsc_prob": 0.5,
     "fuel_rate": 1.93,
     "fuel_effect": 0.035,
     "sprint": true
