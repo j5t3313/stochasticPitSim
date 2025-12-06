@@ -14,6 +14,7 @@ KEY FEATURES
 ✓ Historical parameter extraction from FastF1 data
 ✓ Practice session (FP1/FP2) tire modeling with Bayesian inference
 ✓ Monte Carlo simulation with 1500+ iterations
+✓ Laptime target thresholds for optimal strategy selection
 ✓ Comprehensive strategy analysis and visualization
 
 QUICK START
@@ -21,9 +22,9 @@ QUICK START
 
 BASIC USAGE (No Weather, Fallback Parameters)
 ----------------------------------------------
+python pit_sim.py 2025 "Monaco"
+python pit_sim.py 2025 "United States"
 python f1_strategy_analyzer.py --simulate 2025 "Monaco"
-python f1_strategy_analyzer.py --simulate 2025 "United States"
-python f1_strategy_analyzer.py --simulate 2025 "Italian Grand Prix"
 
 WITH EXTRACTED PARAMETERS (More Accurate)
 ------------------------------------------
@@ -31,14 +32,66 @@ WITH EXTRACTED PARAMETERS (More Accurate)
 python f1_strategy_analyzer.py --extract 2025 "Monaco"
 
 # Step 2: Run simulation with extracted parameters
-python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+python pit_sim.py 2025 "Monaco"
 
 WITH WEATHER UPDATES
 ---------------------
 python f1_strategy_analyzer.py --weather "Monaco" --api-key YOUR_API_KEY
 
+WITH LAPTIME TARGETS
+---------------------
+python pit_sim.py 2025 "Monaco" --targets
+python laptime_targets.py 2025 "Monaco" --compound SOFT --position 3
+
+PROJECT STRUCTURE
+================================================================================
+
+├── circuit_config.json      # Circuit parameters (laps, pit loss, SC probability)
+├── pit_sim.py               # Main simulation engine
+├── tire_model.py            # Bayesian tire degradation modeling
+├── laptime_targets.py       # Laptime threshold calculator
+├── param_extractor.py       # Extract parameters from historical data
+├── validation.py            # Compare predictions to actual results
+├── f1_strategy_analyzer.py  # Full analysis pipeline
+└── weather_rain_probability.py  # Weather forecast integration
+
 COMMAND REFERENCE
 ================================================================================
+
+pit_sim.py
+----------
+Primary simulation tool with strategy analysis.
+
+python pit_sim.py <year> <gp_name> [options]
+
+Options:
+  --sensitivity <strategy>  Analyze pace thresholds for a strategy
+  --targets [compound]      Calculate laptime targets for optimal strategy
+  --position <1-20>         Grid position for targets (default: 1)
+
+Examples:
+  python pit_sim.py 2025 "Monaco"
+  python pit_sim.py 2025 "United States" --sensitivity "1-stop (S-H)"
+  python pit_sim.py 2025 "Monaco" --targets
+  python pit_sim.py 2025 "Monaco" --targets SOFT --position 3
+
+laptime_targets.py
+------------------
+Standalone laptime threshold analysis.
+
+python laptime_targets.py <year> <gp_name> [options]
+
+Options:
+  --compound <SOFT|MEDIUM|HARD>  Analyze specific compound
+  --position <1-20>              Grid position (default: 1)
+  --sims <n>                     Simulations per comparison (default: 100)
+
+Examples:
+  python laptime_targets.py 2025 "United States"
+  python laptime_targets.py 2025 "Monaco" --compound SOFT --position 3 --sims 150
+
+f1_strategy_analyzer.py
+-----------------------
 
 --extract YEAR "GP_NAME"
     Extract circuit-specific parameters from 3 years of historical data.
@@ -88,6 +141,78 @@ COMMAND REFERENCE
     Example:
     python f1_strategy_analyzer.py --historical "Monaco"
 
+LAPTIME TARGET ANALYSIS
+================================================================================
+
+OVERVIEW
+--------
+The laptime target system calculates the threshold laptimes above which
+(slower than) a strategy or compound becomes suboptimal. This answers the
+question: "How slow can my tires be before I should switch strategies?"
+
+HOW IT WORKS
+------------
+1. Takes current tire model pace as baseline
+2. Simulates pairwise strategy comparisons
+3. Uses binary search to find crossover points
+4. Reports threshold laptimes where strategy preference changes
+
+OUTPUT EXAMPLE
+--------------
+SOFT COMPOUND
+------------------------------------------------------------
+Current pace (lap 10): 73.45s
+
+Current best strategy: 1-stop (S-H)
+  Avg time: 5765.2s, Avg pos: 2.3
+
+Switch from 1-stop (S-H) when SOFT is slower than:
+  73.89s/lap: switch to 1-stop (M-H)
+  74.12s/lap: switch to 2-stop (S-H-M)
+  74.45s/lap: switch to 1-stop (H-M)
+
+INTERPRETATION
+--------------
+- If SOFT is running at 73.45s, stay with 1-stop (S-H)
+- If SOFT degrades to 73.89s or slower, switch to 1-stop (M-H)
+- Thresholds account for full race simulation including pit stops
+
+SENSITIVITY TABLE
+-----------------
+The --targets option also produces a sensitivity table showing which
+strategy is optimal at each pace level:
+
+Laptime      Best Strategy         Avg Pos    Avg Pts
+----------------------------------------------------
+72.45s/lap   1-stop (S-H)          2.1        15.2
+72.95s/lap   1-stop (S-H)          2.3        14.8
+73.45s/lap   1-stop (S-H)          2.5        14.1
+73.95s/lap   1-stop (M-H)          2.8        13.2
+74.45s/lap   1-stop (M-H)          3.1        12.1
+
+PROGRAMMATIC USAGE
+------------------
+from laptime_targets import LaptimeTargetCalculator
+
+calculator = LaptimeTargetCalculator(circuit, models, params)
+
+# Get all crossover thresholds
+thresholds = calculator.calculate_all_thresholds(grid_pos=1, n_sims=100)
+
+# Generate sensitivity table for a compound
+sensitivity = calculator.generate_pace_sensitivity_table(
+    compound='SOFT', 
+    grid_pos=1, 
+    pace_range=(-1.5, 1.5), 
+    steps=7
+)
+
+# Find best strategy given specific compound paces
+best, all_results = calculator.find_best_strategy_for_pace(
+    compound_paces={'SOFT': 74.0, 'MEDIUM': 74.5, 'HARD': 75.2},
+    grid_pos=1
+)
+
 CIRCUIT CONFIGURATION
 ================================================================================
 
@@ -100,6 +225,7 @@ All circuit parameters are stored in circuit_config.json:
 - sc_prob: Safety car probability (0.0 - 1.0)
 - vsc_prob: Virtual safety car probability (0.0 - 1.0)
 - fuel_rate: Fuel consumption per lap in kg
+- fuel_effect: Lap time gain per kg of fuel burned
 - sprint: Boolean flag for sprint weekend format
 
 SUPPORTED CIRCUITS (2025)
@@ -248,7 +374,7 @@ TIRE MODELING SYSTEM
 
 PRACTICE-BASED BAYESIAN MODELS
 -------------------------------
-During --simulate, the system automatically:
+During simulation, the system automatically:
 
 1. Loads FP1, FP2 and/or Sprint session data (if available)
 2. Builds Bayesian tire degradation models using MCMC (NumPyro)
@@ -268,7 +394,8 @@ COMPOUNDS MODELED
 • MEDIUM: Balanced performance
 • HARD: Slowest, lowest degradation
 
-Note: WET and INTERMEDIATE compounds not modeled as usage is dictated by track conditions rather than degradation
+Note: WET and INTERMEDIATE compounds not modeled as usage is dictated by
+track conditions rather than degradation
 
 DEGRADATION MODELING
 --------------------
@@ -297,17 +424,20 @@ Grid P1, P3, P5, P8, P10, P15
 SIMULATED STRATEGIES
 --------------------
 
-1. 1-stop (M-H): Medium → Hard
-2. 1-stop (H-M): Hard → Medium
-3. 1-stop (H-S): Hard → Soft
-4. 1-stop (S-H): Soft → Hard
-5. 1-stop (S-M): Soft → Medium
-6. 1-stop (M-S): Medium → Soft
-7. 2-stop (M-H-S): Medium → Hard → Soft
-8. 2-stop (H-M-H): Hard → Medium → Hard
-9. 2-stop (H-S-H): Hard → Soft → Hard
-10. 2-stop (M-H-M): Medium → Hard → Medium
-11. 2-stop (S-H-M): Soft → Hard → Medium
+1-Stop Strategies:
+  1. 1-stop (M-H): Medium → Hard
+  2. 1-stop (H-M): Hard → Medium
+  3. 1-stop (H-S): Hard → Soft
+  4. 1-stop (S-H): Soft → Hard
+  5. 1-stop (S-M): Soft → Medium
+  6. 1-stop (M-S): Medium → Soft
+
+2-Stop Strategies:
+  7. 2-stop (M-H-S): Medium → Hard → Soft
+  8. 2-stop (H-M-H): Hard → Medium → Hard
+  9. 2-stop (S-H-S): Soft → Hard → Soft
+  10. 2-stop (S-H-M): Soft → Hard → Medium
+  11. 2-stop (S-M-S): Soft → Medium → Soft
 
 RACE SIMULATION FACTORS
 ------------------------
@@ -342,6 +472,7 @@ POST-RACE VALIDATION (--validate)
 ----------------------------------
 After a race, validate model predictions against actual results:
 
+python validation.py 2024 "Monaco"
 python f1_strategy_analyzer.py --validate 2025 "Monaco"
 
 VALIDATION METRICS
@@ -403,24 +534,38 @@ RACE WEEKEND PREPARATION
 ------------------------
 # Monday-Tuesday: Initial analysis with historical data
 python f1_strategy_analyzer.py --extract 2025 "Monaco"
-python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+python pit_sim.py 2025 "Monaco"
 
 # Wednesday-Thursday: Update with weather forecast
 python f1_strategy_analyzer.py --weather "Monaco" --api-key YOUR_KEY
 
 # Friday: Re-run simulation with updated weather
-python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+python pit_sim.py 2025 "Monaco"
 
-# Post-FP1/Sprint: Simulation now uses practice tire data automatically
-python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+# Post-FP1/FP2: Simulation now uses practice tire data automatically
+python pit_sim.py 2025 "Monaco"
+
+# Post-FP2: Calculate laptime targets for strategy decisions
+python pit_sim.py 2025 "Monaco" --targets
 
 # Sunday: Post-race validation
-python f1_strategy_analyzer.py --validate 2025 "Monaco"
+python validation.py 2025 "Monaco"
 
 QUICK ANALYSIS (NO PREP)
 -------------------------
 # Just run simulation with fallback parameters
-python f1_strategy_analyzer.py --simulate 2025 "Monaco"
+python pit_sim.py 2025 "Monaco"
+
+LAPTIME TARGET ANALYSIS
+------------------------
+# Full analysis for all compounds
+python laptime_targets.py 2025 "Monaco"
+
+# Specific compound analysis from P3
+python laptime_targets.py 2025 "Monaco" --compound SOFT --position 3
+
+# Via pit_sim.py
+python pit_sim.py 2025 "Monaco" --targets MEDIUM --position 5
 
 HISTORICAL RESEARCH
 -------------------
@@ -429,6 +574,61 @@ python f1_strategy_analyzer.py --historical "Monaco"
 
 # Extract actual strategies from most recent race
 python f1_strategy_analyzer.py --strategies 2025 "Monaco"
+
+PROGRAMMATIC USAGE
+================================================================================
+
+BASIC SIMULATION
+----------------
+import json
+from tire_model import build_models
+from pit_sim import load_params, get_strats, run_mc
+
+with open('circuit_config.json') as f:
+    circuits = json.load(f)
+
+circuit = circuits['Monaco']
+params, _ = load_params(circuit['gp_name'])
+models, model_info = build_models(2025, 'Monaco', circuit['base_pace'])
+
+strategies = get_strats(circuit)
+results = run_mc(strategies, models, circuit, 
+                 grid_pos=[1, 5, 10], params=params, n_sims=1000)
+
+for pos, data in results.items():
+    print(f"Grid P{pos}:")
+    for strat, res in data.items():
+        avg_pts = sum(res['pts']) / len(res['pts'])
+        print(f"  {strat}: {avg_pts:.1f} avg points")
+
+LAPTIME TARGET CALCULATOR
+--------------------------
+from laptime_targets import LaptimeTargetCalculator
+
+calculator = LaptimeTargetCalculator(circuit, models, params)
+
+# Get current compound pace
+soft_pace = calculator.get_current_compound_pace('SOFT', stint_lap=10)
+
+# Calculate all crossover thresholds
+thresholds = calculator.calculate_all_thresholds(grid_pos=1, n_sims=100)
+
+# Generate pace sensitivity table
+sensitivity = calculator.generate_pace_sensitivity_table(
+    compound='SOFT', 
+    grid_pos=1, 
+    pace_range=(-1.5, 1.5), 
+    steps=7
+)
+print(sensitivity)
+
+# Find best strategy for specific compound paces
+best_strat, all_results = calculator.find_best_strategy_for_pace(
+    compound_paces={'SOFT': 74.0, 'MEDIUM': 74.5, 'HARD': 75.2},
+    grid_pos=1,
+    n_sims=100
+)
+print(f"Best strategy: {best_strat}")
 
 TECHNICAL REQUIREMENTS
 ================================================================================
@@ -499,7 +699,7 @@ SOLUTION:
 
 ISSUE: Simulation very slow
 SOLUTION: 
-    - Reduce num_sims in code (default 1500)
+    - Reduce n_sims parameter (default 1500)
     - Check CPU usage (should use multiple cores)
     - Close other applications
 
@@ -508,6 +708,34 @@ SOLUTION:
     - Check exact spelling of Grand Prix name
     - Use quotes: "Monaco" not Monaco
     - Check circuit_config.json for exact name format
+
+ISSUE: Laptime targets taking too long
+SOLUTION:
+    - Reduce --sims parameter (default 100)
+    - Analyze single compound with --compound option
+    - Use fewer grid positions
+
+LIMITATIONS
+================================================================================
+
+DATA CONSTRAINTS
+----------------
+- Public timing data does not include fuel loads, tire temperatures, or telemetry
+- Practice stints are short, limiting degradation curve accuracy
+- Unknown driver run plans make lap filtering imprecise
+
+MODEL ASSUMPTIONS
+-----------------
+- Linear tire degradation (does not capture tire cliff)
+- Position changes at pit stops are probabilistic estimates
+- Safety car timing is randomized based on historical probability
+- Fuel correction uses fixed rate per circuit
+
+LAPTIME TARGETS
+---------------
+- Thresholds assume other compounds remain at modeled pace
+- Crossover points have uncertainty from Monte Carlo variance
+- Analysis at boundary values (>5s adjustment) less reliable
 
 CUSTOMIZATION
 ================================================================================
@@ -525,64 +753,36 @@ Edit circuit_config.json manually:
     "sc_prob": 0.40,
     "vsc_prob": 0.30,
     "fuel_rate": 1.4,
+    "fuel_effect": 0.035,
     "sprint": false
   }
 }
 
 ADJUSTING SIMULATION PARAMETERS
 --------------------------------
-In f1_strategy_analyzer.py, modify:
+In pit_sim.py, modify:
 
-- num_sims: Number of Monte Carlo iterations (default 1500)
-- key_positions: Grid positions to analyze
-- strategies: Add/remove strategies in generate_strategies()
+- n_sims in run_mc(): Number of Monte Carlo iterations (default 1500)
+- key_pos: Grid positions to analyze
+- get_strats(): Add/remove strategies
 
-WEATHER API ALTERNATIVES
+ADDING CUSTOM STRATEGIES
 -------------------------
-Code uses OpenWeatherMap but can be adapted for:
-- WeatherAPI.com
-- Tomorrow.io
-- Visual Crossing
-- Met Office
+Modify get_strats() function in pit_sim.py:
 
-ADVANCED FEATURES
-================================================================================
-
-CUSTOM STRATEGY TESTING
-------------------------
-Modify generate_strategies() function to test custom strategies:
-
-def generate_strategies(rain_prob, sprint):
-    strategies = {
+def get_strats(circuit):
+    total_laps = circuit['laps']
+    
+    dry = {
         "3-stop (S-S-M-H)": [
-            {"compound": "SOFT", "laps": 12},
-            {"compound": "SOFT", "laps": 12},
-            {"compound": "MEDIUM", "laps": 15},
-            {"compound": "HARD", "laps": 17}
-        ]
+            {"comp": "SOFT", "laps": int(total_laps * 0.20)},
+            {"comp": "SOFT", "laps": int(total_laps * 0.20)},
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.25)},
+            {"comp": "HARD", "laps": int(total_laps * 0.35)}
+        ],
+        # ... existing strategies
     }
-    return strategies
-
-SENSITIVITY ANALYSIS
---------------------
-Test how different parameters affect outcomes:
-
-for rain_prob in [0.0, 0.1, 0.2, 0.3]:
-    # Update circuit config
-    # Run simulation
-    # Compare results
-
-TEAM-SPECIFIC MODELING
-----------------------
-Add car_performance_factor adjustments for different teams:
-
-car_performance_map = {
-    1: 0.98,   # Red Bull
-    3: 0.99,   # Ferrari
-    5: 1.00,   # McLaren
-    8: 1.02,   # Mercedes
-    ...
-}
+    return dry
 
 CREDITS & REFERENCES
 ================================================================================
@@ -602,12 +802,6 @@ MODELING APPROACH
 - Bayesian tire modeling (MCMC with NumPyro)
 - Stochastic race event generation
 - Historical parameter extraction
+- Binary search crossover detection
 
-=================================
-
-Created by: Jessica Steele
-Last Updated: October 2025
-
-For questions, issues, or improvements, please document your findings.
-
-=======================
+================================================================================
