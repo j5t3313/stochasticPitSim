@@ -334,10 +334,10 @@
     "laps": 58,
     "length_km": 5.281,
     "base_pace": 87,
-    "pit_loss": 21.9,
-    "rain_prob": 0.01,
+    "pit_loss": 21.0,
+    "rain_prob": 0.00,
     "sc_prob": 0.38,
-    "vsc_prob": 0.38,
+    "vsc_prob": 0.50,
     "fuel_rate": 1.897,
     "fuel_effect": 0.035
   }
