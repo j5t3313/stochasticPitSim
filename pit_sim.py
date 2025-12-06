@@ -189,20 +189,20 @@ def get_strats(circuit):
     
     dry = {
         "1-stop (M-H)": [
-            {"comp": "MEDIUM", "laps": int(total_laps * 0.32)},
-            {"comp": "HARD", "laps": int(total_laps * 0.68)}
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.34)},
+            {"comp": "HARD", "laps": int(total_laps * 0.66)}
         ],
         "1-stop (H-M)": [
-            {"comp": "HARD", "laps": int(total_laps * 0.68)},
-            {"comp": "MEDIUM", "laps": int(total_laps * 0.32)}
+            {"comp": "HARD", "laps": int(total_laps * 0.54)},
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.46)}
         ],
         "1-stop (H-S)": [
             {"comp": "HARD", "laps": int(total_laps * 0.76)},
             {"comp": "SOFT", "laps": int(total_laps * 0.24)}
         ],
         "1-stop (S-H)": [
-            {"comp": "SOFT", "laps": int(total_laps * 0.25)},
-            {"comp": "HARD", "laps": int(total_laps * 0.75)}
+            {"comp": "SOFT", "laps": int(total_laps * 0.28)},
+            {"comp": "HARD", "laps": int(total_laps * 0.72)}
         ],
         "1-stop (M-S)": [
             {"comp": "MEDIUM", "laps": int(total_laps * 0.59)},
@@ -213,29 +213,29 @@ def get_strats(circuit):
             {"comp": "MEDIUM", "laps": int(total_laps * 0.57)}
         ],
         "2-stop (M-H-S)": [
-            {"comp": "MEDIUM", "laps": int(total_laps * 0.29)},
-            {"comp": "HARD", "laps": int(total_laps * 0.57)},
-            {"comp": "SOFT", "laps": int(total_laps * 0.14)}
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.32)},
+            {"comp": "HARD", "laps": int(total_laps * 0.49)},
+            {"comp": "SOFT", "laps": int(total_laps * 0.19)}
         ],
         "2-stop (H-M-H)": [
             {"comp": "HARD", "laps": int(total_laps * 0.21)},
             {"comp": "MEDIUM", "laps": int(total_laps * 0.29)},
             {"comp": "HARD", "laps": int(total_laps * 0.50)}
         ],
-        "2-stop (S-H-S)": [
-            {"comp": "SOFT", "laps": int(total_laps * 0.29)},
-            {"comp": "HARD", "laps": int(total_laps * 0.57)},
-            {"comp": "SOFT", "laps": int(total_laps * 0.14)}
+        "2-stop (M-H-M)": [
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.24)},
+            {"comp": "HARD", "laps": int(total_laps * 0.42)},
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.34)}
         ],
         "2-stop (S-H-M)": [
-            {"comp": "SOFT", "laps": int(total_laps * 0.29)},
-            {"comp": "HARD", "laps": int(total_laps * 0.50)},
-            {"comp": "MEDIUM", "laps": int(total_laps * 0.21)}
+            {"comp": "SOFT", "laps": int(total_laps * 0.28)},
+            {"comp": "HARD", "laps": int(total_laps * 0.44)},
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.28)}
         ],
-        "2-stop (S-M-S)": [
-            {"comp": "SOFT", "laps": int(total_laps * 0.29)},
-            {"comp": "MEDIUM", "laps": int(total_laps * 0.45)},
-            {"comp": "SOFT", "laps": int(total_laps * 0.26)}
+        "2-stop (M-H-H)": [
+            {"comp": "MEDIUM", "laps": int(total_laps * 0.24)},
+            {"comp": "HARD", "laps": int(total_laps * 0.42)},
+            {"comp": "HARD", "laps": int(total_laps * 0.34)}
         ]
     }
     
